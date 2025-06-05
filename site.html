@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ссылки с админ-панелью</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f0f0f5;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    input[type="url"], input[type="password"] {
+      padding: 8px;
+      width: 300px;
+      max-width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .add-btn { background-color: #4CAF50; }
+    .copy-btn { background-color: #2196F3; margin-left: 10px; }
+    .delete-btn { background-color: #f44336; margin-left: 10px; }
+    .admin-btn { background-color: #9c27b0; margin-left: 10px; }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #fff;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .link {
+      word-break: break-all;
+      flex-grow: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Список ссылок</h1>
+
+  <form id="linkForm">
+    <input type="url" id="linkInput" placeholder="Введите ссылку" required />
+    <button type="submit" class="add-btn">Добавить</button>
+    <button type="button" id="adminToggle" class="admin-btn">Войти как админ</button>
+  </form>
+
+  <div id="adminLogin" style="display:none; margin-bottom: 20px;">
+    <input type="password" id="adminPassword" placeholder="Введите пароль" />
+    <button onclick="loginAsAdmin()" class="admin-btn">Войти</button>
+  </div>
+
+  <ul id="linkList"></ul>
+
+  <script>
+    const ADMIN_PASSWORD = 'admin123';
+    let isAdmin = false;
+
+    const form = document.getElementById('linkForm');
+    const input = document.getElementById('linkInput');
+    const list = document.getElementById('linkList');
+    const adminLogin = document.getElementById('adminLogin');
+    const adminToggle = document.getElementById('adminToggle');
+
+    function saveLinks(links) {
+      localStorage.setItem('links', JSON.stringify(links));
+    }
+
+    function loadLinks() {
+      return JSON.parse(localStorage.getItem('links')) || [];
+    }
+
+    function renderLinks() {
+      const links = loadLinks();
+      list.innerHTML = '';
+      links.forEach((link, index) => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = link;
+        a.textContent = link;
+        a.className = 'link';
+        a.target = '_blank';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Скопировать';
+        copyBtn.className = 'copy-btn';
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(link);
+          copyBtn.textContent = 'Скопировано!';
+          setTimeout(() => (copyBtn.textContent = 'Скопировать'), 1000);
+        };
+
+        li.appendChild(a);
+        li.appendChild(copyBtn);
+
+        if (isAdmin) {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.textContent = 'Удалить';
+          deleteBtn.className = 'delete-btn';
+          deleteBtn.onclick = () => {
+            const updatedLinks = loadLinks().filter((_, i) => i !== index);
+            saveLinks(updatedLinks);
+            renderLinks();
+          };
+          li.appendChild(deleteBtn);
+        }
+
+        list.appendChild(li);
+      });
+    }
+
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const link = input.value.trim();
+      if (link) {
+        const links = loadLinks();
+        links.unshift(link);
+        saveLinks(links);
+        input.value = '';
+        renderLinks();
+      }
+    };
+
+    adminToggle.onclick = () => {
+      adminLogin.style.display = adminLogin.style.display === 'none' ? 'block' : 'none';
+    };
+
+    function loginAsAdmin() {
+      const passwordInput = document.getElementById('adminPassword');
+      if (passwordInput.value === ADMIN_PASSWORD) {
+        isAdmin = true;
+        alert('Вход как админ выполнен!');
+        adminLogin.style.display = 'none';
+        passwordInput.value = '';
+        renderLinks();
+      } else {
+        alert('Неверный пароль!');
+      }
+    }
+
+    renderLinks();
+  </script>
+</body>
+</html>
